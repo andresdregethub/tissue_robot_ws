@@ -3,7 +3,9 @@ import socket
 import struct
 import threading
 import time
+import rclpy
 from collections import deque
+from std_msgs.msg import Bool, Float32
 
 import cv2
 import mediapipe as mp
@@ -205,7 +207,7 @@ def create_detectors():
 # 5. START CAMERA RECEIVER
 # ==========================================================
 
-def camera_receiver():
+def camera_receiver(ros_node, ros_publishers):
 
     global audio_sneeze_score
     global audio_event_until
@@ -228,6 +230,8 @@ def camera_receiver():
 
     previous_timestamp = 0
     reported_event_id = 0
+    last_ros_publish = 0.0
+    ROS_PUBLISH_INTERVAL = 0.2
 
     try:
 
@@ -390,6 +394,35 @@ def camera_receiver():
                 combined_detection = (
                     recent_sneeze and hand_near_face
                 )
+                                # --------------------------------------------------
+                # PUBLISH PERCEPTION DATA TO ROS 2
+                # --------------------------------------------------
+
+                if current_time - last_ros_publish >= ROS_PUBLISH_INTERVAL:
+
+                    ros_publishers["face_detected"].publish(
+                        Bool(data=(face_count > 0))
+                    )
+
+                    ros_publishers["hand_near_face"].publish(
+                        Bool(data=hand_near_face)
+                    )
+
+                    ros_publishers["sneeze_detected"].publish(
+                        Bool(data=combined_detection)
+                    )
+
+                    ros_publishers["sneeze_score"].publish(
+                        Float32(data=float(current_score))
+                    )
+
+                    last_ros_publish = current_time
+
+                    # Process ROS events without blocking the camera loop.
+                    rclpy.spin_once(
+                        ros_node,
+                        timeout_sec=0.0
+                    )
 
                 if (
                     combined_detection
@@ -497,6 +530,49 @@ if __name__ == "__main__":
     print("       ACHOO BOT - SNEEZE MONITOR")
     print("========================================")
 
+    # ------------------------------------------------------
+    # INITIALIZE ROS 2
+    # ------------------------------------------------------
+
+    rclpy.init()
+
+    ros_node = rclpy.create_node("achoobot_perception")
+
+    ros_publishers = {
+
+        "face_detected": ros_node.create_publisher(
+            Bool,
+            "/perception/face_detected",
+            10
+        ),
+
+        "hand_near_face": ros_node.create_publisher(
+            Bool,
+            "/perception/hand_near_face",
+            10
+        ),
+
+        "sneeze_detected": ros_node.create_publisher(
+            Bool,
+            "/perception/sneeze_detected",
+            10
+        ),
+
+        "sneeze_score": ros_node.create_publisher(
+            Float32,
+            "/perception/sneeze_score",
+            10
+        )
+
+    }
+
+    print("[ROS 2] Perception node initialized.")
+    print("[ROS 2] Publishers created.")
+
+    # ------------------------------------------------------
+    # START AUDIO RECEIVER
+    # ------------------------------------------------------
+
     audio_thread = threading.Thread(
         target=audio_receiver,
         daemon=True
@@ -504,11 +580,27 @@ if __name__ == "__main__":
 
     audio_thread.start()
 
+    # ------------------------------------------------------
+    # START CAMERA RECEIVER
+    # ------------------------------------------------------
+
     try:
-        camera_receiver()
+
+        camera_receiver(
+            ros_node,
+            ros_publishers
+        )
 
     except KeyboardInterrupt:
+
         print("\nStopping Achoo Bot monitor...")
 
     finally:
+
+        ros_node.destroy_node()
+
+        if rclpy.ok():
+            rclpy.shutdown()
+
+        print("[ROS 2] Perception node shut down.")
         print("Monitor stopped.")
