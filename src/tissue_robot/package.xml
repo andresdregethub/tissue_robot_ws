@@ -1,18 +1,19 @@
-<?xml version="1.0"?>
+This XML file does not appear to have any style information associated with it. The document tree is shown below.
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>tissue_robot</name>
-  <version>0.0.0</version>
-  <description>TODO: Package description</description>
-  <maintainer email="andres@todo.todo">andres</maintainer>
-  <license>TODO: License declaration</license>
-
-  <test_depend>ament_copyright</test_depend>
-  <test_depend>ament_flake8</test_depend>
-  <test_depend>ament_pep257</test_depend>
-  <test_depend>python3-pytest</test_depend>
-
-  <export>
-    <build_type>ament_python</build_type>
-  </export>
+<name>tissue_robot</name>
+<version>0.0.0</version>
+<description> ROS 2 package for the Achoo Bot autonomous tissue delivery robot. </description>
+<maintainer email="andres@todo.todo">andres</maintainer>
+<license>TODO: License declaration</license>
+<buildtool_depend>ament_python</buildtool_depend>
+<exec_depend>rclpy</exec_depend>
+<exec_depend>std_msgs</exec_depend>
+<test_depend>ament_copyright</test_depend>
+<test_depend>ament_flake8</test_depend>
+<test_depend>ament_pep257</test_depend>
+<test_depend>python3-pytest</test_depend>
+<export>
+<build_type>ament_python</build_type>
+</export>
 </package>
