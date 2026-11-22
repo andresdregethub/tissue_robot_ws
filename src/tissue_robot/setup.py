@@ -23,7 +23,8 @@ setup(
         ],
     },
     entry_points={
-        'console_scripts': [
-        ],
-    },
+    'console_scripts': [
+        'sneeze_monitor = tissue_robot.sneeze_monitor_launcher:main',
+    ],
+},
 )
